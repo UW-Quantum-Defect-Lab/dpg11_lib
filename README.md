@@ -1,2 +1,2 @@
 # dpg11_lib
-Library for waveband dpg11
+Python library for wavepond dpg11
