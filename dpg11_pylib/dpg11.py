@@ -1,20 +1,17 @@
 #TODO: Delete this file once the new version is working properly
 # This is the old library that I had created. I will delete this library once I have added everything over
 
+# TODO: Update the info for when this file was created
 # 2021-07-06 / last updated on
 # This code was made for use in the Fu lab
 # by Ethan Hansen
 
 import os
-import ctypes as C
-import platform as p
 import shutil
 import subprocess
-from typing import Type
 import time
 
 import numpy as np
-import pandas as pd
 
 import inspect
 
@@ -23,14 +20,14 @@ import inspect
 # TODO: Add proper docstrings for all of the functions, update the error calling using that new function
 # TODO: Organize the workspace
 
-# TODO: Update the verbose for all of the outputs, add lines saying that things have been succesfully created
+# TODO: Remove all of the verbose from the functions
+# TODO: Update all of the docstrings
 # DPG11 class for controlling the DPG11 using the script method
-class DPG11ScriptMethod:
+class DPG11Device:
     """
     This class contains all of the functions required for communicating with the WavePond DPG11 data
     generators untilizing the script method. 
     """
-    directory = os.getcwd()
 
     # Hardware limited options
     internal_clock_rate_limits_in_hz = [25e6, 2.5e9]
@@ -43,8 +40,8 @@ class DPG11ScriptMethod:
     clock_rate = 0  # This is a placeholder that will update once you set the clock frequency
 
     def __init__(self,
+                 driver_path: str,
                  card_number: int = 1,
-                 verbose: int = 1,
                  open_api_on_initialization: bool = True,
                  clock_rate=None):
         """
@@ -58,16 +55,40 @@ class DPG11ScriptMethod:
 
         Parameters
         ----------
+        # TODO: Add the docstring for the driver path function
         card_number : int
             The DG card number that you wish to control. This is only relevant when using two or more WavePond DG devices, by default 1
-        verbose : int, optional
-            Determines how in-depth each function will print-out after operations. The higher the verbose the more detailed outputs, by default 1
         open_api_on_initialization : bool, optional
             If set to True, the .bat will be run to open the api. If False, the API will not be opened and must be 
             opened with open_api() before calling any functions to execute scripts, by default True
         clock_rate
             If not set to None, the clock rate of the data generator will be set to the input value.
         """
+        
+        # Remove this later, just so the class works for now
+        self.verbose = 3
+        
+        # init the driver path
+        self.directory = driver_path
+        # check that the driver is in the path provided
+        if not os.path.exists(os.path.join(self.directory, 'dax22000_GUI_64.exe')):
+            raise ValueError('No driver was found in the path provided. Please input a valid path.')
+        # save the scripts, wavefiles, and multi-wavefiles paths
+        self.scripts_path = os.path.join(self.directory, 'scripts')
+        self.wavefiles_path = os.path.join(self.directory, 'wavefiles')
+        self.multi_wavefiles_path = os.path.join(self.directory, 'multi_wavefiles')
+        # create the script, wave, and multi-wave folders if they don't exist
+        try:
+            if not os.path.exists(self.scripts_path):
+                os.makedirs(self.scripts_path)
+            if not os.path.exists(self.wavefiles_path):
+                os.makedirs(self.wavefiles_path)
+            if not os.path.exists(self.multi_wavefiles_path):
+                os.makedirs(self.multi_wavefiles_path)
+        except:
+            raise ValueError('The driver path is not valid or there was an issue. Please input a valid path.')
+            
+        
 
         # Check for TypeErrors
         annotations = inspect.getfullargspec(self.__init__).annotations
@@ -77,7 +98,6 @@ class DPG11ScriptMethod:
                     f'{i} must be of type {annotations[i]} (Received input of type {type(locals()[i])})')
 
         self.card_number = card_number
-        self.verbose = verbose  # End up using this with the warning statements later on
         self.open_api_bat = 'Script_API_Test\\dpg11_open_api'
         self.close_api_bat = 'Script_API_Test\\dpg11_close_api'
 
@@ -98,8 +118,7 @@ class DPG11ScriptMethod:
         """
         subprocess.call([r'{0}\\{1}.bat'.format(self.directory, self.open_api_bat)])
 
-        if self.verbose > 1:
-            print('API Opened')
+        print('API Opened')
 
     def close_api(self):
         """
@@ -108,8 +127,7 @@ class DPG11ScriptMethod:
         """
         subprocess.call([r'{0}\\{1}.bat'.format(self.directory, self.close_api_bat)])
 
-        if self.verbose > 1:
-            print('API Closed')
+        print('API Closed')
 
     def create_script(self,
                       command_list: list,
