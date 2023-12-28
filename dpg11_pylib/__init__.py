@@ -1,4 +1,6 @@
-__version__ = '0.1.dev'
+__version__ = '0.1.dev0'
+__author__ = 'Ethan R. Hansen'
+
 
 
 
