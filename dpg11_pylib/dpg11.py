@@ -133,7 +133,7 @@ class DPG11Device:
                       command_list: list,
                       script_name: str = 'temp_script',
                       execute_after_creation: bool = False,
-                      overwrite_script: bool = False,
+                      overwrite_script: bool = True,
                       save_script: bool = False):
         """
         This function will take in a list of DPG11 functions defined here and format them (in order) into a script for the API to execute.
@@ -174,11 +174,11 @@ class DPG11Device:
         # TODO: Update the allowable functions list
 
         # Save script text file local path
-        script_loc_path = f'{script_name}.txt'
+        script_path = self.scripts_path + f'/{script_name}.txt'
 
         if self.verbose > 2:
             print(command_list)
-            print('\nscript_loc_path: ' + script_loc_path)
+            print('\nscript_path: ' + script_path)
 
         # Check for TypeErrors
         annotations = inspect.getfullargspec(self.create_script).annotations
@@ -208,7 +208,7 @@ class DPG11Device:
             )
 
         # Check if script_name already exists
-        if not overwrite_script and os.path.isfile(path=script_loc_path):
+        if not overwrite_script and os.path.isfile(path=script_path):
             if script_name == 'temp_script':
                 return ValueError(
                     'Previous temporary file with name temp_script was not properly deleted. Please delete this file'
@@ -226,17 +226,17 @@ class DPG11Device:
 
         # create the script name
         # Create the file, write the script into it, and save it
-        f = open(script_loc_path, "w")
+        f = open(script_path, "w")
         f.write(script_str)
         f.close()
 
         # Execute script if true
         if execute_after_creation:
-            return self.execute_script(script_txt=script_loc_path, save_script=save_script)
+            return self.execute_script(script_txt=script_path, save_script=save_script)
         else:
             if self.verbose > 1:
-                print('Script saved as ' + script_loc_path + ' and not executed')
-            return script_loc_path
+                print('Script saved as ' + script_path + ' and not executed')
+            return script_path
 
     def execute_script(self,
                        script_txt: str,
@@ -400,8 +400,8 @@ class DPG11Device:
         wave_name : str
             What to name the wavefile. Do not include .txt. The final file name will be wave_name_{num_points}.txt
         wave_dict : dict
-            Waveform array dictionary of the form {1: channel 1 array,
-                                                   3: channel 3 array}
+            Waveform array dictionary of the form {1: 'path for channel 1 array',
+                                                   3: 'path for channel 3 array'}
             and so on and so forth, where channel 1 array is the array of 1's and 0 of whether the channel is on or off.
             Note that you do not need to fill any of the off channels.
 
@@ -415,7 +415,9 @@ class DPG11Device:
         
         # print('Number of Points: ', num_points)
         # Eventual name for the wave file to be saved as
-        wave_filename = f'{wave_name}_{num_points}.txt'
+        # TODO: Fix this, really work on the naming convention, I don't like how I did it
+        wave_filename = f'wavefiles/{wave_name}_{num_points}.txt'
+        wave_filepath = self.directory + '/' + wave_filename
         # Creating the null array of zeros to be filled to off channels
         null_array = np.zeros(num_points, dtype=int)
         
@@ -440,7 +442,7 @@ class DPG11Device:
         if num_points % 64 != 0:
             raise ValueError('Length of waveform_array must be modulo 64')
         # Open/create the file. Length of the waveform will be in the file name
-        temp = open(wave_filename, 'w')
+        temp = open(wave_filepath, 'w')
 
         # Add waveform array to the new file
         for i, point in enumerate(decimal_arr):
@@ -501,7 +503,8 @@ class DPG11Device:
             print('triggered array: ' + str(triggered_arr))
 
         # Format the filename for how it should be saved, where the number is the number of waves in the multi_wave_file
-        filename = f'{name}_{num_waves}.txt'
+        filename = f'multi_wavefiles/{name}_{num_waves}.txt'
+        full_path = self.directory + '/' + filename
 
         if self.verbose > 1:
             print('Multi-wave filename: ' + filename)
@@ -517,7 +520,7 @@ class DPG11Device:
             print('String to write to text file: ' + str_to_write)
 
         # Create and write to the file
-        f = open(filename, "w")
+        f = open(full_path, "w")
         f.write(str_to_write)
         f.close()
 

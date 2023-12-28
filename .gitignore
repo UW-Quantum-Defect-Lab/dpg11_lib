@@ -85,6 +85,9 @@ ipython_config.py
 # vscode
 *.code-workspace
 
+# ignore the testing folder
+testing/
+
 # Jupyter Notebooks
 *.ipynb
 # pyenv
