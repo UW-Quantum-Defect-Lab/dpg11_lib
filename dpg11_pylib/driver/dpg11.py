@@ -15,6 +15,9 @@ import numpy as np
 
 import inspect
 
+# from qt3utils.pulsers import qcsapphire, pulseblaster
+# from qt3utils.experiments import cwodmr
+
 
 # TODO: Get the class updated to work with the script method
 # TODO: Add proper docstrings for all of the functions, update the error calling using that new function
@@ -30,7 +33,7 @@ class DPG11Device:
     """
 
     # Hardware limited options
-    internal_clock_rate_limits_in_hz = [25e6, 2.5e9]
+    internal_clock_rate_limits_in_hz = [50e6, 2.5e9]
     device_output_channels = [i for i in range(1, 12)]
     memory_limits = [48, 8e6]
     loops_limits = [0, 2 ** 16 - 2]
@@ -605,7 +608,7 @@ class DPG11Device:
         Parameters
         ----------
         clock_rate : float
-            What to set the clock rate of the DPG11 as. Must be between 25 MHz and 2.5 GHz
+            What to set the clock rate of the DPG11 as. Must be between 50 MHz and 2.5 GHz
         execute: bool, optional
             If true, creates an executes a single-line script with just this function, by default False
 
@@ -959,58 +962,7 @@ class DPG11Device:
                                   overwrite_script=overwrite_script,
                                   save_script=save_script)
 
-    # Function that allowed for multi-channel outputs
-    # This does not work anymore with the new way the DPG11 works 
-    # def run_multi_channel(self,
-    #                       single_df: pd.DataFrame,
-    #                       multi_df: pd.DataFrame,
-    #                       clock_rate: float,
-
-    #                       save_script: bool = False,
-    #                       script_name: str = 'temp_script',
-    #                       overwrite_script: bool = True,
-
-    #                       soft_trig: bool = True):
-
-    #     # Creation of the initial command_list
-    #     command_list = [
-    #         self.stop(),
-    #         self.set_clk_rate(clock_rate=clock_rate)]
-
-    #     # Go through the single wave df
-    #     for index, row in single_df.iterrows():
-    #         command_list.append(
-    #             self.create_single_segment(
-    #                 channel_num=row['channel_num'],
-    #                 wave_filename=row['wave_filename'],
-    #                 num_loops=row['num_loops'],
-    #                 pad_begin=row['pad_begin'],
-    #                 pad_end=row['pad_end'],
-    #                 triggered=row['triggered']
-    #             )
-    #         )
-
-    #     # Go through the multi wave df
-    #     for index, row in multi_df.iterrows():
-    #         command_list.append(
-    #             self.create_multi_segments(
-    #                 channel_num=row['channel_num'],
-    #                 waves_filename=row['waves_filename'],
-    #                 pad_begin=row['pad_begin'],
-    #                 pad_end=row['pad_end'],
-    #                 loop=row['loop']
-    #             )
-    #         )
-
-    #     # Now append the run command
-    #     command_list.append(self.run(soft_trig=soft_trig))
-
-    #     # Create and run the script
-    #     return self.create_script(command_list=command_list,
-    #                               script_name=script_name,
-    #                               execute_after_creation=True,
-    #                               overwrite_script=overwrite_script,
-    #                               save_script=save_script)
+    
 
     # TODO: Fix these eventually 
     @staticmethod
