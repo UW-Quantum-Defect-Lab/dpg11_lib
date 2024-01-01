@@ -140,9 +140,9 @@ def pad_waveform(waveform: np.ndarray or list,
     
     # Pad the waveform
     if pad_side == 'right':
-        waveform = np.pad(waveform, (pad_value, num_samples_to_pad), constant_values=pad_value)
+        waveform = np.pad(waveform, (pad_value, num_samples_to_pad), constant_values=pad_value).astype(int)
     elif pad_side == 'left':
-        waveform = np.pad(waveform, (num_samples_to_pad, pad_value), constant_values=pad_value)
+        waveform = np.pad(waveform, (num_samples_to_pad, pad_value), constant_values=pad_value).astype(int)
     else:
         raise ValueError('pad_side must be either "right" or "left"')
     

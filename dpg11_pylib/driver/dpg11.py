@@ -33,7 +33,7 @@ class DPG11Device:
     """
 
     # Hardware limited options
-    internal_clock_rate_limits_in_hz = [50e6, 2.5e9]
+    internal_clock_rate_limits_in_hz = [25e6, 2.5e9]
     device_output_channels = [i for i in range(1, 12)]
     memory_limits = [48, 8e6]
     loops_limits = [0, 2 ** 16 - 2]
@@ -389,7 +389,7 @@ class DPG11Device:
     
     def create_decimal_array(self,
                              stack_arr):
-        return np.apply_along_axis(self.bin_array_to_decimal, 1, stack_arr)
+        return np.apply_along_axis(self.bin_array_to_decimal, 1, stack_arr).astype(int)
 
     #FIXME: Update this to match with the new form for sending wave signals!
     def create_wave_file(self,
@@ -600,14 +600,14 @@ class DPG11Device:
 
     # Function to set the clock frequency
     def set_clk_rate(self,
-                     clock_rate: float,
+                     clock_rate: float or int,
                      execute: bool = False):
         """
         Function that will output the set_clk_rate command string to be input into the command_list parameter of create_script()
 
         Parameters
         ----------
-        clock_rate : float
+        clock_rate : float | int
             What to set the clock rate of the DPG11 as. Must be between 50 MHz and 2.5 GHz
         execute: bool, optional
             If true, creates an executes a single-line script with just this function, by default False
@@ -618,21 +618,24 @@ class DPG11Device:
             SetClkRate command string
         """
         # Check for input type errors     
-        annotations = inspect.getfullargspec(self.set_clk_rate).annotations
-        for i in annotations.keys():
-            if type(locals()[i]) != annotations[i]:
-                raise TypeError(
-                    f'{i} must be of type {annotations[i]} (Received input of type {type(locals()[i])})')
+        # annotations = inspect.getfullargspec(self.set_clk_rate).annotations
+        # for i in annotations.keys():
+        #     if type(locals()[i]) != annotations[i]:
+        #         raise TypeError(
+        #             f'{i} must be of type {annotations[i]} (Received input of type {type(locals()[i])})')
+        
+        if not isinstance(clock_rate, (float, int)):
+            raise TypeError("clock_rate must be of type float or int")
 
                 # Check range of set frequency
         if not (self.internal_clock_rate_limits_in_hz[0] <= clock_rate <=
                 self.internal_clock_rate_limits_in_hz[1]):
             raise ValueError('Data Generator internal frequency input should be between 25e6 Hz and 2.5e9 Hz')
 
-        func_str = f'SetClkRate {self.card_number} {clock_rate}'
+        func_str = f'SetClkRate {self.card_number} {int(clock_rate)}'
 
         # Update the clock frequency variable
-        self.clock_rate = clock_rate
+        self.clock_rate = int(clock_rate)
 
         # For running executing a single-line script when execute set to True
         if execute:
