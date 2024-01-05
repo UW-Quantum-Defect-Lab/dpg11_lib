@@ -2,9 +2,6 @@
 # This is the old library that I had created. I will delete this library once I have added everything over
 
 # TODO: Update the info for when this file was created
-# 2021-07-06 / last updated on
-# This code was made for use in the Fu lab
-# by Ethan Hansen
 
 import os
 import shutil
@@ -16,8 +13,6 @@ import numpy as np
 import inspect
 
 
-# TODO: Get the class updated to work with the script method
-# TODO: Add proper docstrings for all of the functions, update the error calling using that new function
 # TODO: Organize the workspace
 
 # TODO: Remove all of the verbose from the functions
@@ -29,8 +24,9 @@ class DPG11Device:
     generators untilizing the script method. 
     """
 
+    # TODO: Change these to be all caps bc they are constants
     # Hardware limited options
-    internal_clock_rate_limits_in_hz = [25e6, 2.5e9]
+    internal_clock_rate_limits_in_hz = [50e6, 2.5e9]
     device_output_channels = [i for i in range(1, 12)]
     memory_limits = [48, 8e6]
     loops_limits = [0, 2 ** 16 - 2]
@@ -42,7 +38,7 @@ class DPG11Device:
     def __init__(self,
                  driver_path: str,
                  card_number: int = 1,
-                 open_api_on_initialization: bool = True,
+                 open_api_on_initialization: bool = False,
                  clock_rate=None):
         """
         Initialize DPG11 script method library for controlling the DPG11. This script method is functional but does not return
@@ -66,7 +62,7 @@ class DPG11Device:
         """
         
         # Remove this later, just so the class works for now
-        self.verbose = 3
+        self.verbose = 0
         
         # init the driver path
         self.directory = driver_path
@@ -171,7 +167,6 @@ class DPG11Device:
         create_multi_segments() \n
         pwr_dwn()
         """
-        # TODO: Update the allowable functions list
 
         # Save script text file local path
         script_path = self.scripts_path + f'/{script_name}.txt'
@@ -186,8 +181,6 @@ class DPG11Device:
             if type(locals()[i]) != annotations[i]:
                 raise TypeError(
                     f'{i} must be of type {annotations[i]} (Received input of type {type(locals()[i])})')
-
-        # TODO: Add print-outs for whether the scripts will be deleted or saved or whatever. Also printed after the execution
 
         # Ensure that all elements in command_list
         if not all(isinstance(elem, str) for elem in command_list):
@@ -312,6 +305,11 @@ class DPG11Device:
                            ):
         """
         Sends a command to the API to stop the output of the DPG11 and set the clock rate
+        
+        Parameters
+        ----------
+        clock_rate : float
+            What to set the clock rate of the DPG11 as. Must be between 50 MHz and 2.5 GHz
         """
         # Stop the output
         self.create_script([self.stop(),
@@ -340,7 +338,7 @@ class DPG11Device:
 
     # Small little function to get the number of points from the filename
     def get_data_from_fn(self,
-                         filename: str):
+                         filename: str) -> int:
         """
         Simple function to extract the data from single and multi-wave .txt files. 
         The .txt files should be of the form [filename_data.txt], where data is the data we wish to extract.
@@ -381,17 +379,42 @@ class DPG11Device:
 
     # For creating the wave files
     def bin_array_to_decimal(self,
-                             bin_arr: None):
+                             bin_arr: None) -> int:
+        '''
+        Function to convert a binary array to a decimal number. Used for creating DPG11 wavefiles.
+        
+        Parameters
+        ----------
+        bin_arr : np.ndarray
+            Binary array to convert to decimal.
+            
+        Returns
+        -------
+        int
+            Decimal number of the binary array
+        '''
         return int(''.join(str(bit) for bit in bin_arr), 2)
     
     def create_decimal_array(self,
-                             stack_arr):
-        return np.apply_along_axis(self.bin_array_to_decimal, 1, stack_arr)
+                             stack_arr) -> np.ndarray:
+        '''
+        Function to convert a stacked binary array to a decimal array. Used for creating DPG11 wavefiles.
+        
+        Parameters
+        ----------
+        stack_arr : np.ndarray
+            Stacked binary array to convert to decimal.
+            
+        Returns
+        -------
+        np.ndarray
+            Decimal array of the binary array
+        '''
+        return np.apply_along_axis(self.bin_array_to_decimal, 1, stack_arr).astype(int)
 
-    #FIXME: Update this to match with the new form for sending wave signals!
     def create_wave_file(self,
                          wave_name: str,
-                         wave_dict: dict):
+                         wave_dict: dict) -> str:
         """
         This functions creates a .txt wavefile from a waveform array in the proper format to be used by the API.
 
@@ -400,8 +423,8 @@ class DPG11Device:
         wave_name : str
             What to name the wavefile. Do not include .txt. The final file name will be wave_name_{num_points}.txt
         wave_dict : dict
-            Waveform array dictionary of the form {1: 'path for channel 1 array',
-                                                   3: 'path for channel 3 array'}
+            Waveform array dictionary of the form {1: 'ch1_waveform_array',
+                                                   3: 'ch3_waveform_array'}
             and so on and so forth, where channel 1 array is the array of 1's and 0 of whether the channel is on or off.
             Note that you do not need to fill any of the off channels.
 
@@ -415,7 +438,6 @@ class DPG11Device:
         
         # print('Number of Points: ', num_points)
         # Eventual name for the wave file to be saved as
-        # TODO: Fix this, really work on the naming convention, I don't like how I did it
         wave_filename = f'wavefiles/{wave_name}_{num_points}.txt'
         wave_filepath = self.directory + '/' + wave_filename
         # Creating the null array of zeros to be filled to off channels
@@ -427,11 +449,11 @@ class DPG11Device:
         decimal_arr = self.create_decimal_array(stacked_arr)
         
         # Check for correct inputs
-        # annotations = inspect.getfullargspec(self.create_wave_file).annotations
-        # for i in annotations.keys():
-        #     if type(locals()[i]) != annotations[i]:
-        #         raise TypeError(
-        #             f'{i} must be of type {annotations[i]} (Received input of type {type(locals()[i])})')
+        annotations = inspect.getfullargspec(self.create_wave_file).annotations
+        for i in annotations.keys():
+            if type(locals()[i]) != annotations[i]:
+                raise TypeError(
+                    f'{i} must be of type {annotations[i]} (Received input of type {type(locals()[i])})')
 
         # Check if the name is correct
         if ' ' in wave_name:
@@ -457,13 +479,12 @@ class DPG11Device:
         return wave_filename
 
     # Function to create the .txt file that includes the individual waveforms for the create_segments function
-    #FIXME: Change the documentation for this!!!
     def create_multi_wave_file(self,
                                name: str,
-                               filename_arr,
-                               num_loops_arr,
-                               triggered_arr
-                               ):
+                               filename_arr: list,
+                               num_loops_arr: list,
+                               triggered_arr: list
+                               ) -> str:
         """
         This function creates the txt file of the format to send multi-wave segments to be used by the create_multi_segments function.
 
@@ -471,9 +492,13 @@ class DPG11Device:
         ----------
         name : str
             What to name multi-wave file. Do not include the .txt. The final filename should be of the form name_{num_waves}.txt
-        waves_df : pd.DataFrame
-            Dataframe with the multi-wave information. It should have the keys ['filenames', 'num_loops', 'triggered'].
-
+        filename_arr : list
+            List of the filenames of the wavefiles to be used in the multi-wave file
+        num_loops_arr : list
+            List of the number of loops for each wavefile in the multi-wave file
+        triggered_arr : list
+            List of the triggered values for each wavefile in the multi-wave file
+            
         Returns
         -------
         str
@@ -526,12 +551,11 @@ class DPG11Device:
 
         return filename
 
-    # TODO: Add all of the type errors and what not for all of these functions and the docstrings
     # All of the functions to be sent to the DPG11 that will output strings for our case
     # Function to run the waveforms 
     def run(self,
             soft_trig: bool = True,
-            execute: bool = False):
+            execute: bool = False) -> str:
         """
         Function that will output the string required for the .txt script to run saved waves on a channel
 
@@ -559,17 +583,16 @@ class DPG11Device:
         func_str = f'Run {self.card_number} {soft_trig_lower}'
 
         if execute:
-            return self.create_script(command_list=[func_str],
-                                      script_name='temp_run',
-                                      execute_after_creation=True,
-                                      overwrite_script=True,
-                                      save_script=False)
-        else:
-            return func_str
+            self.create_script(command_list=[func_str],
+                               script_name='temp_run',
+                               execute_after_creation=True,
+                               overwrite_script=True,
+                               save_script=False)
+        return func_str
 
     # Function to stop running the waveforms
     def stop(self,
-             execute: bool = False):
+             execute: bool = False) -> str:
         """
         Function to output the Stop command string
         
@@ -587,25 +610,24 @@ class DPG11Device:
 
         # For running executing a single-line script when execute set to True
         if execute:
-            return self.create_script(command_list=[func_str],
-                                      script_name='temp_stop',
-                                      execute_after_creation=True,
-                                      overwrite_script=True,
-                                      save_script=False)
-        else:
-            return func_str
+            self.create_script(command_list=[func_str],
+                               script_name='temp_stop',
+                               execute_after_creation=True,
+                               overwrite_script=True,
+                               save_script=False)
+        return func_str
 
     # Function to set the clock frequency
     def set_clk_rate(self,
-                     clock_rate: float,
-                     execute: bool = False):
+                     clock_rate: float or int,
+                     execute: bool = False) -> str:
         """
         Function that will output the set_clk_rate command string to be input into the command_list parameter of create_script()
 
         Parameters
         ----------
-        clock_rate : float
-            What to set the clock rate of the DPG11 as. Must be between 25 MHz and 2.5 GHz
+        clock_rate : float | int
+            What to set the clock rate of the DPG11 as. Must be between 50 MHz and 2.5 GHz
         execute: bool, optional
             If true, creates an executes a single-line script with just this function, by default False
 
@@ -620,39 +642,58 @@ class DPG11Device:
             if type(locals()[i]) != annotations[i]:
                 raise TypeError(
                     f'{i} must be of type {annotations[i]} (Received input of type {type(locals()[i])})')
+        
+        if not isinstance(clock_rate, (float, int)):
+            raise TypeError("clock_rate must be of type float or int")
 
                 # Check range of set frequency
         if not (self.internal_clock_rate_limits_in_hz[0] <= clock_rate <=
                 self.internal_clock_rate_limits_in_hz[1]):
-            raise ValueError('Data Generator internal frequency input should be between 25e6 Hz and 2.5e9 Hz')
+            raise ValueError('Data Generator internal frequency input should be between 50e6 Hz and 2.5e9 Hz')
 
-        func_str = f'SetClkRate {self.card_number} {clock_rate}'
+        func_str = f'SetClkRate {self.card_number} {int(clock_rate)}'
 
         # Update the clock frequency variable
-        self.clock_rate = clock_rate
+        self.clock_rate = int(clock_rate)
 
         # For running executing a single-line script when execute set to True
         if execute:
-            return self.create_script(command_list=[func_str],
-                                      script_name='temp_set_clk_rate',
-                                      execute_after_creation=True,
-                                      overwrite_script=True,
-                                      save_script=False)
-        else:
-            return func_str
+            self.create_script(command_list=[func_str],
+                               script_name='temp_set_clk_rate',
+                               execute_after_creation=True,
+                               overwrite_script=True,
+                               save_script=False)
+        
+        return func_str
 
+    # Function to set external trigger
     def select_trigger(self,
                        trigger: bool = False,
-                       execute: bool = False):
+                       execute: bool = False) -> str:
+        '''
+        Function to output the SelExtTrig command string
+        
+        Parameters
+        ----------
+        trigger : bool, optional
+            If True, then the DPG11 will use the external trigger, by default False
+        execute: bool, optional
+            If True, creates an executes a single-line script with just this function, by default False
+            
+        Returns
+        -------
+        str
+            SelExtTrig command string
+        '''
 
         func_str = f'SelExtTrig {self.card_number} {str(trigger).lower()}'
 
         if execute:
-            return self.create_script(command_list=[func_str],
-                                      script_name='temp_sel_ext_trig',
-                                      execute_after_creation=True,
-                                      overwrite_script=True,
-                                      save_script=False)
+            self.create_script(command_list=[func_str],
+                               script_name='temp_sel_ext_trig',
+                               execute_after_creation=True,
+                               overwrite_script=True,
+                               save_script=False)
         else:
             return func_str
 
@@ -664,7 +705,7 @@ class DPG11Device:
                               pad_begin: int = 2047,
                               pad_end: int = 2047,
                               triggered: int = 1,
-                              execute: bool = False):
+                              execute: bool = False) -> str:
         """
         Function to output the CreateSingleSegment command string
 
@@ -726,13 +767,12 @@ class DPG11Device:
 
         # For running executing a single-line script when execute set to True
         if execute:
-            return self.create_script(command_list=[func_str],
-                                      script_name='temp_create_single_segment',
-                                      execute_after_creation=True,
-                                      overwrite_script=True,
-                                      save_script=True)
-        else:
-            return func_str
+            self.create_script(command_list=[func_str],
+                               script_name='temp_create_single_segment',
+                               execute_after_creation=True,
+                               overwrite_script=True,
+                               save_script=True)
+        func_str
 
     # Function to create multiple segments
     def create_multi_segments(self,
@@ -741,7 +781,7 @@ class DPG11Device:
                               pad_begin: int = 2047,
                               pad_end: int = 2047,
                               loop: bool = False,
-                              execute: bool = False):
+                              execute: bool = False) -> str:
         """
         Function to output the CreateSegments command string
 
@@ -790,17 +830,16 @@ class DPG11Device:
 
         # For running executing a single-line script when execute set to True
         if execute:
-            return self.create_script(command_list=[func_str],
-                                      script_name='temp_create_multi_segments',
-                                      execute_after_creation=True,
-                                      overwrite_script=True,
-                                      save_script=True)
-        else:
-            return func_str
+            self.create_script(command_list=[func_str],
+                               script_name ='temp_create_multi_segments',
+                               execute_after_creation=True,
+                               overwrite_script=True,
+                               save_script=True)
+        func_str
 
     # Function to power down
     def pwr_dwn(self,
-                execute: bool = False):
+                execute: bool = False) -> str or int:
         """
         Function to output the PWR_DWN command string
 
@@ -828,7 +867,7 @@ class DPG11Device:
 
     # Function to initialize
     def pwr_dwn(self,
-                execute: bool = False):
+                execute: bool = False) -> str:
         """
         Function to output the PWR_DWN command string
 
@@ -846,16 +885,18 @@ class DPG11Device:
 
         # For running executing a single-line script when execute set to True
         if execute:
-            return self.create_script(command_list=[func_str],
-                                      script_name='temp_pwr_down',
-                                      execute_after_creation=True,
-                                      overwrite_script=True,
-                                      save_script=False)
-        else:
-            return func_str
+            self.create_script(command_list=[func_str],
+                               script_name='temp_pwr_down',
+                               execute_after_creation=True,
+                               overwrite_script=True,
+                               save_script=False)
+        func_str
 
     # Just for getting what the clock rate was last set to
-    def get_clock_rate(self):
+    def get_clock_rate(self) -> float or int:
+        '''
+        Function to return the current sample rate of the DPG11
+        '''
         return self.clock_rate
 
     # Function for creating and running a single wave
@@ -867,11 +908,9 @@ class DPG11Device:
                         pad_begin: int = 2047,
                         pad_end: int = 2047,
                         triggered: int = 0,
-
                         save_script: bool = False,
                         script_name: str = 'temp_script',
                         overwrite_script: bool = True,
-
                         soft_trig: bool = True):
         """
         This function inputs a single wavefile str and desired clock rate, output channel, number of loops, pad, and triggering options,
@@ -880,27 +919,34 @@ class DPG11Device:
         Parameters
         ----------
         wave_filename : str
-            [description]
+            Name of the .txt wavefile that you have saved and want to run
         clock_rate : float
-            [description]
+            What to set the dpg11 clock rate to. Must be between 50 MHz and 2.5 GHz
         channel_num : int, optional
-            [description], by default 1
+            Device to run the signal on, by default 1
         num_loops : int, optional
-            [description], by default 0
+            Number of loops to run. 0 loops will go continuously, by default 0
         pad_begin : int, optional
-            [description], by default 2047
+            Not needed for DPG11, but is used for the other wavepond devices, by default 2047
         pad_end : int, optional
-            [description], by default 2047
+            Not needed for DPG11, but is used for the other wavepond devices, by default 2047
         triggered : int, optional
-            [description], by default 0
+            0 => Waveform starts up first time but cannot be triggered later without shutting down first. 
+            1 => Allows waveform to be triggered more than once while running., by default 0
         save_script : bool, optional
-            [description], by default False
+            Whether to save the script file, or delete it after running, by default False
         script_name : str, optional
-            [description], by default 'temp_script'
+            What to name the script, only useful if save_script is True, by default 'temp_script'
         overwrite_script : bool, optional
-            [description], by default True
+            Choose whether or not you want to overwrite scripts with the same name, by default True
         soft_trig : bool, optional
-            [description], by default True
+            Whether to provde a software trig to run the waveform after the run function is applied, 
+            or wait for an external trigger if False, by default True
+            
+        Returns
+        -------
+        str or int
+            The filename of the saved script if save_script is True, or 0 if save_script is False
 
         """
         # TODO: Update for all of the error raising eventually
@@ -959,104 +1005,3 @@ class DPG11Device:
                                   overwrite_script=overwrite_script,
                                   save_script=save_script)
 
-    # Function that allowed for multi-channel outputs
-    # This does not work anymore with the new way the DPG11 works 
-    # def run_multi_channel(self,
-    #                       single_df: pd.DataFrame,
-    #                       multi_df: pd.DataFrame,
-    #                       clock_rate: float,
-
-    #                       save_script: bool = False,
-    #                       script_name: str = 'temp_script',
-    #                       overwrite_script: bool = True,
-
-    #                       soft_trig: bool = True):
-
-    #     # Creation of the initial command_list
-    #     command_list = [
-    #         self.stop(),
-    #         self.set_clk_rate(clock_rate=clock_rate)]
-
-    #     # Go through the single wave df
-    #     for index, row in single_df.iterrows():
-    #         command_list.append(
-    #             self.create_single_segment(
-    #                 channel_num=row['channel_num'],
-    #                 wave_filename=row['wave_filename'],
-    #                 num_loops=row['num_loops'],
-    #                 pad_begin=row['pad_begin'],
-    #                 pad_end=row['pad_end'],
-    #                 triggered=row['triggered']
-    #             )
-    #         )
-
-    #     # Go through the multi wave df
-    #     for index, row in multi_df.iterrows():
-    #         command_list.append(
-    #             self.create_multi_segments(
-    #                 channel_num=row['channel_num'],
-    #                 waves_filename=row['waves_filename'],
-    #                 pad_begin=row['pad_begin'],
-    #                 pad_end=row['pad_end'],
-    #                 loop=row['loop']
-    #             )
-    #         )
-
-    #     # Now append the run command
-    #     command_list.append(self.run(soft_trig=soft_trig))
-
-    #     # Create and run the script
-    #     return self.create_script(command_list=command_list,
-    #                               script_name=script_name,
-    #                               execute_after_creation=True,
-    #                               overwrite_script=overwrite_script,
-    #                               save_script=save_script)
-
-    # TODO: Fix these eventually 
-    @staticmethod
-    def join_pattern_arrays(pattern_list):
-        if not (isinstance(pattern_list, np.ndarray) or isinstance(pattern_list, list)):
-            raise TypeError('Pattern_list in not numpy.ndarray or list type')
-        if not (np.all([isinstance(pattern, np.ndarray) for pattern in pattern_list]) or
-                np.all([isinstance(pattern, list) for pattern in pattern_list])):
-            raise TypeError('One or more patterns in pattern_list are of different type AND/OR'
-                            ' not numpy.ndarray or list type.')
-
-        # take an empty numpy.ndarray and append each pattern given in the pattern list, with index priority
-        # (1st pattern is first in the final pattern, 2nd pattern is second in the final pattern etc.)
-        final_pattern = np.array(np.concatenate(pattern_list, axis=0))
-
-        return final_pattern
-
-    # TODO: Fix these later, update them to have everything that we need 
-    @staticmethod
-    def repeat_pattern_array(pattern_array, repetitions):
-        if not isinstance(pattern_array, np.ndarray) or not isinstance(pattern_array, list):
-            raise TypeError('Pattern_array in not numpy.ndarray or list type')
-
-        # similar to join_pattern_arrays, takes a zero numpy.ndarray & adds to it the given pattern 'repetitions' times
-        final_pattern_array = np.array([])
-        for j in range(repetitions):
-            final_pattern_array = np.append(final_pattern_array, pattern_array)
-
-        return final_pattern_array
-
-    def generate_OFF_pattern_array(self, length=None):
-        # returns an array of zeros, of the specified length
-        pattern = np.zeros(length, dtype=int)
-        return pattern
-
-    def generate_ON_pattern_array(self, length=None):
-        # returns an array of ones, of the specified length
-        pattern = np.ones(length, dtype=int)
-        return pattern
-
-    def generate_OFF_ON_pattern_array(self, size=1, length=None):
-        # returns an array of zeros-ones, of the specified length. Step size is determined from size
-        pattern = np.array([int(np.ceil((i + 1 + size) / size) % 2) for i in range(length)])
-        return pattern
-
-    def generate_ON_OFF_pattern_array(self, size=1, length=None):
-        # returns an array of ones-zeros, of the specified length. Step size is determined from size
-        pattern = np.array([int(np.ceil((i + 1) / size) % 2) for i in range(length)])
-        return pattern
