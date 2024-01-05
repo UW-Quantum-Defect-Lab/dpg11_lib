@@ -11,8 +11,6 @@ from dpg11_pylib.visualization.colors import get_color, get_color_list
 # Define function to find the longest length of a waveform when accounting for different x_starts
 def find_longest_waveform(waveforms: list,
                           x_starts: list = None) -> int:
-    # TODO: Add the docstrings
-    # Add the docstrings
     """
     Find the longest waveform in a list of waveforms.
     
@@ -42,34 +40,26 @@ def find_longest_waveform(waveforms: list,
             # return the length of the longest waveform
             return max([(len(wave) + x_starts[i]) for i, wave in enumerate(waveforms)])
 
-"""
-I want to create a function to visualize waveforms here, both np arrays and dpg11 waveforms
-For the DPG11 waveforms, have the option to visualize the outputs on multiple channels, which is an option.
-I will need to write more functions to do this. First, I will create the option to visualize the 
-standard numpy arrays.
-"""
+
 
 # Function to visualize waveforms
-#TODO: Figure out the right way to name this, is it a camel case situation?
-#TODO: Create a function to get the start value
 #TODO: Add the ability to deal with only one waveform and label and what not
-#TODO: Add the docstrings
-def plot_waveforms(waveforms: list,
-                   labels: list,
+
+def plot_waveforms(waveforms: list or np.ndarray,
+                   labels: list or np.ndarray,
                    x_starts = None,
                    grid_spacing: list = [8, 2],
-                   figure_width: int or float = 10):
-    # docstrings
+                   figure_width: int or float = 10) -> None:
     """
     Plot a list of waveforms.
     
     Parameters
     ----------
-    waveforms : list
+    waveforms : list or ndarray
         List of waveforms to plot.
-    labels : list
+    labels : list or ndarray
         List of labels for the waveforms.
-    x_starts : list, optional
+    x_starts : list or ndarray or NoneType, optional
         List of x_starts for each waveform. Default is None.
     grid_spacing : list, optional
         List of the major and minor grid spacing. Default is [8, 2].
@@ -80,8 +70,6 @@ def plot_waveforms(waveforms: list,
     -------
     None
     """
-    
-    # TODO: Add these docstrings
     # Create the color schemes
     # TODO: replace this with a predefined color scheme in the colors library
     # TODO: fix if the colors arr is shorter than the
@@ -156,7 +144,7 @@ def plot_waveforms(waveforms: list,
 def plot_dpg11_wavefile(wavefile: str,
                         grid_spacing: list = [8, 2],
                         figure_width: int or float = 10,
-                        plot_channels: list = None):
+                        plot_channels: list = None) -> None:
         
     '''
     Plot the all of the waveforms on every channel from a dpg11 wavefile. Or choose the channels to plot.
