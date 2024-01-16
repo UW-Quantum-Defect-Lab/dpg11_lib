@@ -24,7 +24,9 @@ setup(
     py_modules=find_packages(),
     
     install_requires=[
-        'numpy<=1.23',
+        'numpy>=1.23.0',
+        'matplotlib>=3.7.4',
+        ''
     ],
     
     
